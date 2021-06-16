@@ -274,17 +274,18 @@
                  {:aggregation [[:sum [:expression "double-price"]]]
                   :expressions {"double-price" [:* $price 2]}})))))))
 
-#_(deftest multiple-cumulative-sums-test
+(deftest multiple-cumulative-sums-test
   ;; sample-dataset doesn't work on Redshift yet -- see #14784
   (mt/test-drivers (disj (mt/normal-drivers-with-feature :expression-aggregations) :redshift)
     (testing "The results of divide or multiply two CumulativeSum should be correct (#15118)"
       (mt/dataset sample-dataset
-        (is (= [["2016-01-01T00:00:00Z" 3236  2458.0  5694.0   1]
-                ["2017-01-01T00:00:00Z" 17587 14995.0 32582.0  2]
-                ["2018-01-01T00:00:00Z" 40381 35366.5 75747.5  3]
-                ["2019-01-01T00:00:00Z" 65835 58002.7 123837.7 4]
-                ["2020-01-01T00:00:00Z" 69540 64923.0 134463.0 5]]
-               (mt/formatted-rows [identity int 2.0 2.0 int]
+        (is (= (for [[month quantity rating] [["2016-01-01T00:00:00Z" 3236  2458.0 ]
+                                              ["2017-01-01T00:00:00Z" 17587 14995.0]
+                                              ["2018-01-01T00:00:00Z" 40381 35366.5]
+                                              ["2019-01-01T00:00:00Z" 65835 58002.7]
+                                              ["2020-01-01T00:00:00Z" 69540 64923.0]]]
+                 [month quantity rating (+ quantity rating) (* quantity rating)])
+               (mt/formatted-rows [identity int 2.0 2.0 2.0]
                  (mt/run-mbql-query orders
                    {:aggregation
                     [[:aggregation-options [:cum-sum $quantity] {:display-name "C1"}]
