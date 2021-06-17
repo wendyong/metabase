@@ -396,7 +396,12 @@
     :advanced-math-expressions
 
     ;; Does the driver support percentile calculations (including median)
-    :percentile-aggregations})
+    :percentile-aggregations
+
+    ;; Added 0.40.0
+    ;; Does the driver support window functions e.g. sum(x) OVER (...) ?
+    ;; This means we can do CumulativeSum and CumulativeCount in the data warehouse itself.
+    :window-functions})
 
 (defmulti supports?
   "Does this driver support a certain `feature`? (A feature is a keyword, and can be any of the ones listed above in
@@ -415,7 +420,7 @@
 (defmethod supports? [::driver :basic-aggregations] [_ _] true)
 (defmethod supports? [::driver :case-sensitivity-string-filter-options] [_ _] true)
 
-(defmulti ^:deprecated format-custom-field-name
+(defmulti ^{:deprecated "0.33.0"} format-custom-field-name
   "Prior to Metabase 0.33.0, you could specifiy custom names for aggregations in MBQL by wrapping the clause in a
   `:named` clause:
 

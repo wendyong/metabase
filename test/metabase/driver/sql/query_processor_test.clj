@@ -10,7 +10,6 @@
             [metabase.query-processor :as qp]
             [metabase.query-processor.interface :as qp.i]
             [metabase.test :as mt]
-            [metabase.util :as u]
             [metabase.util.honeysql-extensions :as hx]
             [pretty.core :refer [PrettyPrintable]]
             [schema.core :as s])
@@ -52,7 +51,7 @@
 
 (defmethod sql.qp/->honeysql [::id-swap Identifier]
   [driver identifier]
-  ((get-method sql.qp/->honeysql [:sql Identifier]) driver (CustomIdentifier. identifier sql.qp/*table-alias*)))
+  ((get-method sql.qp/->honeysql [:sql Identifier]) driver (CustomIdentifier. identifier "wow")))
 
 (deftest generate-honeysql-for-join-test
   (testing "Test that the correct HoneySQL gets generated for a query with a join, and that the correct identifiers are used"
@@ -503,76 +502,39 @@
       (str/replace #"PUBLIC\." "")
       str/trim))
 
-(defn- mega-query []
-  (mt/mbql-query nil
-    {:fields       [&P1.products.category
-                    &People.people.source
-                    [:field "count" {:base-type :type/BigInteger}]
-                    &Q2.products.category
-                    [:field "avg" {:base-type :type/Integer, :join-alias "Q2"}]]
-     :source-query {:source-table $$orders
-                    :aggregation  [[:aggregation-options [:count] {:name "count"}]]
-                    :breakout     [&P1.products.category
-                                   &People.people.source]
-                    :order-by     [[:asc &P1.products.category]
-                                   [:asc &People.people.source]]
-                    :joins        [{:strategy     :left-join
-                                    :source-table $$products
-                                    :condition
-                                    [:= $orders.product_id &P1.products.id]
-                                    :alias        "P1"}
-                                   {:strategy     :left-join
-                                    :source-table $$people
-                                    :condition    [:= $orders.user_id &People.people.id]
-                                    :alias        "People"}]}
-     :joins        [{:strategy     :left-join
-                     :condition    [:= $products.category &Q2.products.category]
-                     :alias        "Q2"
-                     :source-query {:source-table $$reviews
-                                    :aggregation  [[:aggregation-options [:avg $reviews.rating] {:name "avg"}]]
-                                    :breakout     [&P2.products.category]
-                                    :joins        [{:strategy     :left-join
-                                                    :source-table $$products
-                                                    :condition    [:= $reviews.product_id &P2.products.id]
-                                                    :alias        "P2"}]}}]
-     :limit        2}))
-
-(deftest source-aliases-test
+(defn mega-query []
   (mt/dataset sample-dataset
-    (mt/with-everything-store
-      (let [query       (mega-query)
-            small-query (get-in query [:query :source-query])]
-        (testing (format "Query =\n%s" (u/pprint-to-str small-query))
-          (is (= {:this-level-fields {[:field (mt/id :products :category) nil] "P1__CATEGORY"
-                                      [:field (mt/id :people :source) nil]     "People__SOURCE"}
-                  :source-fields     {}}
-                 (#'sql.qp/source-aliases :h2 small-query))))
-
-        (testing (format "Query =\n%s" (u/pprint-to-str query))
-          (is (= {[:field (mt/id :products :category) nil]                "P1__CATEGORY"
-                  [:field (mt/id :people :source) nil]                    "People__SOURCE"
-                  [:field (mt/id :products :category) {:join-alias "Q2"}] "P2__CATEGORY"}
-                 (:source-fields (#'sql.qp/source-aliases :h2 (:query query))))))))))
-
-(defn mini-query []
-  (mt/dataset sample-dataset
-    (qp/query->preprocessed
-     (mt/mbql-query orders
-       {:source-table $$orders
-        :fields       [$id &Q2.products.category]
-        :joins        [{:fields       :none
-                        :condition    [:= $products.category &Q2.products.category]
-                        :alias        "Q2"
-                        :source-query {:source-table $$reviews
-                                       :joins        [{:fields       :all
-                                                       :source-table $$products
-                                                       :condition    [:=
-                                                                      $reviews.product_id
-                                                                      &Products.products.id]
-                                                       :alias        "Products"}]
-                                       :aggregation  [[:avg $reviews.rating]]
-                                       :breakout     [&Products.products.category]}}]
-        :limit        2}))))
+    (mt/mbql-query nil
+      {:fields       [&P1.products.category
+                      &People.people.source
+                      [:field "count" {:base-type :type/BigInteger}]
+                      &Q2.products.category
+                      [:field "avg" {:base-type :type/Integer, :join-alias "Q2"}]]
+       :source-query {:source-table $$orders
+                      :aggregation  [[:aggregation-options [:count] {:name "count"}]]
+                      :breakout     [&P1.products.category
+                                     &People.people.source]
+                      :order-by     [[:asc &P1.products.category]
+                                     [:asc &People.people.source]]
+                      :joins        [{:strategy     :left-join
+                                      :source-table $$products
+                                      :condition    [:= $orders.product_id &P1.products.id]
+                                      :alias        "P1"}
+                                     {:strategy     :left-join
+                                      :source-table $$people
+                                      :condition    [:= $orders.user_id &People.people.id]
+                                      :alias        "People"}]}
+       :joins        [{:strategy     :left-join
+                       :condition    [:= $products.category &Q2.products.category]
+                       :alias        "Q2"
+                       :source-query {:source-table $$reviews
+                                      :aggregation  [[:aggregation-options [:avg $reviews.rating] {:name "avg"}]]
+                                      :breakout     [&P2.products.category]
+                                      :joins        [{:strategy     :left-join
+                                                      :source-table $$products
+                                                      :condition    [:= $reviews.product_id &P2.products.id]
+                                                      :alias        "P2"}]}}]
+       :limit        2})))
 
 (deftest use-correct-source-aliases-test
   (testing "Should generate correct SQL for joins against source queries that contain joins (#12928)")
@@ -611,3 +573,16 @@
            (-> (mega-query)
                mbql->native
                even-prettier-sql)))))
+
+#_(deftest cumulative-sum-test
+  (is (= "sum(sum(f1)) OVER (ORDER BY f2 ASC, f3 DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)"
+         (hformat/to-sql (sql.qp/->CumulativeSum :f1 {:order-by [[:f2 :asc] [:f3 :desc]]}))))
+  (mt/with-everything-store
+    (binding [sql.qp/*query* {:order-by [[:field (mt/id :checkins :date) {:temporal-unit :month}]]}]
+      (is (= (str "sum(sum(PUBLIC.VENUES.PRICE))"
+                  " OVER (ORDER BY parsedatetime(formatdatetime(PUBLIC.CHECKINS.DATE, 'yyyyMM'), 'yyyyMM')"
+                  " ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)")
+             (hformat/to-sql
+              (sql.qp/->honeysql
+               :h2
+               [:cum-sum [:field (mt/id :venues :price) nil]])))))))

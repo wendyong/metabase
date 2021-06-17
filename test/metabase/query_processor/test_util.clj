@@ -23,17 +23,21 @@
 ;; TODO - I don't think we different QP test util namespaces? We should roll this namespace into
 ;; `metabase.query-processor-test`
 
-(s/defn ^:private everything-store-table [table-id :- (s/maybe su/IntGreaterThanZero)]
+(defn- assert-db-hasnt-changed []
   (assert (= (:id (qp.store/database)) (data/id))
-    "with-everything-store currently does not support switching drivers. Make sure you call with-driver *before* with-everything-store.")
+          (str "with-everything-store currently does not support switching drivers or databases.\n"
+               "You cannot use forms that change the current driver/test DB (e.g. driver/with-driver, mt/test-drivers,"
+               " mt/with-db, mt/dataset, etc.) inside with-everything-store.")))
+
+(s/defn ^:private everything-store-table [table-id :- (s/maybe su/IntGreaterThanZero)]
+  (assert-db-hasnt-changed)
   (or (get-in @@#'qp.store/*store* [:tables table-id])
       (do
         (qp.store/fetch-and-store-tables! [table-id])
         (qp.store/table table-id))))
 
 (s/defn ^:private everything-store-field [field-id :- (s/maybe su/IntGreaterThanZero)]
-  (assert (= (:id (qp.store/database)) (data/id))
-    "with-everything-store currently does not support switching drivers. Make sure you call with-driver *before* with-everything-store.")
+  (assert-db-hasnt-changed)
   (or (get-in @@#'qp.store/*store* [:fields field-id])
       (do
         (qp.store/fetch-and-store-fields! [field-id])
@@ -56,7 +60,7 @@
   When fetching the database, this assumes you're using the 'current' database bound to `(data/db)`, so be sure to use
   `data/with-db` if needed."
   [& body]
-  `(do-with-everything-store (fn [] ~@body)))
+  `(do-with-everything-store (fn ~'with-everything-store-fn [] ~@body)))
 
 (defn store-referenced-database!
   "Store the Database for a `query` in the QP Store."

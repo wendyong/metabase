@@ -295,3 +295,8 @@
 (defmethod clojure.pprint/simple-dispatch honeysql.types.SqlCall
   [call]
   (clojure.pprint/write-out (pretty/pretty call)))
+
+(p.types/defrecord+ CumulativeSumWindowFn [expr over-form]
+  hformat/ToSql
+  (to-sql [_]
+    (clojure.core/format "%s OVER (%s)" (hformat/to-sql expr) (hformat/to-sql over-form))))

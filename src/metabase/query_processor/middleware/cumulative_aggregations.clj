@@ -1,6 +1,7 @@
 (ns metabase.query-processor.middleware.cumulative-aggregations
   "Middlware for handling cumulative count and cumulative sum aggregations."
-  (:require [metabase.mbql.schema :as mbql.s]
+  (:require [metabase.driver :as driver]
+            [metabase.mbql.schema :as mbql.s]
             [metabase.mbql.util :as mbql.u]
             [schema.core :as s]))
 
@@ -56,7 +57,9 @@
   clauses respectively and summation is performed on results in Clojure-land."
   [qp]
   (fn [{{breakouts :breakout, aggregations :aggregation} :query, :as query} rff context]
-    (if-not (mbql.u/match aggregations #{:cum-count :cum-sum})
+    (println "(driver/supports? driver/*driver* :window-functions):" (driver/supports? driver/*driver* :window-functions)) ; NOCOMMIT
+    (if (or (not (mbql.u/match aggregations #{:cum-count :cum-sum}))
+            (driver/supports? driver/*driver* :window-functions))
       (qp query rff context)
       (let [query'            (replace-cumulative-ags query)
             ;; figure out which indexes are being changed in the results. Since breakouts always get included in

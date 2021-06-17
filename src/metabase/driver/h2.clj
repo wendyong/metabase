@@ -172,7 +172,7 @@
 (defmethod sql.qp/date [:h2 :month]           [_ _ expr] (trunc-with-format "yyyyMM" expr))
 (defmethod sql.qp/date [:h2 :month-of-year]   [_ _ expr] (hx/month expr))
 (defmethod sql.qp/date [:h2 :quarter-of-year] [_ _ expr] (hx/quarter expr))
-(defmethod sql.qp/date [:h2 :year]            [_ _ expr] (parse-datetime "yyyy" (hx/year expr)))
+(defmethod sql.qp/date [:h2 :year]            [_ _ expr] (hx/year expr) #_(parse-datetime "yyyy" ))
 
 (defmethod sql.qp/date [:h2 :day-of-week]
   [_ _ expr]

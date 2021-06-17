@@ -92,7 +92,7 @@
                  it.unimi.dsi/fastutil]]
    [com.draines/postal "2.0.3"]                                       ; SMTP library
    [com.google.guava/guava "28.2-jre"]                                ; dep for BigQuery, Spark, and GA. Require here rather than letting different dep versions stomp on each other — see comments on #9697
-   [com.h2database/h2 "1.4.197"]                                      ; embedded SQL database
+   [com.h2database/h2 "1.4.200"]                                      ; embedded SQL database
    [com.taoensso/nippy "2.14.0"]                                      ; Fast serialization (i.e., GZIP) library for Clojure
    [commons-codec/commons-codec "1.15"]                               ; Apache Commons -- useful codec util fns
    [commons-io/commons-io "2.8.0"]                                    ; Apache Commons -- useful IO util fns
@@ -354,8 +354,11 @@
    [:with-include-drivers-middleware
     {:include-drivers :all
      :injections
-     [(require 'metabase.plugins)
-      (metabase.plugins/load-plugins!)]}]
+     [(try
+        (require 'metabase.plugins)
+        ((resolve 'metabase.plugins/load-plugins!))
+        (catch Throwable e
+          (println "Error initializing plugins:\n" (Throwable->map e))))]}]
 
    :repl
    [:include-all-drivers
