@@ -31,6 +31,16 @@ metabase:
 
 **IMPORTANT**: when using containers, logs need to be written into the /metabase.db directory. It's the only directory the Metabase user can write to (the user here being the one that executes that Metabase JAR inside the container).
 
+# Jetty logs
+
+Metabase web server can be configured to provide all the logging you need, but be careful, as Jetty logs have a very high level of verbosity and might be difficult to spot the data you are looking for.
+
+To get Jetty logs, add the following lines to the Log4J2 XML file in the <Loggers> node
+
+```
+<Logger name="org.eclipse.jetty" level="DEBUG"/>
+```
+
 # Configuring Emoji Logging
 
 By default Metabase will include emoji characters in logs. You can disable this by using the following environment variable:
