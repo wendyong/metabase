@@ -130,7 +130,10 @@ executors:
       - image: metabase/ci:lein-2.9.5-clojure-1.10.3.814
       - image: metabase/presto-mb-ci:0.186
         environment:
-          JAVA_TOOL_OPTIONS: "-Xmx1g"
+          JAVA_TOOL_OPTIONS: "-Xmx2g"
+    # Run instance with 8GB or RAM instead of the default 4GB for medium instances. The Presto Docker image runs
+    # OOM sometimes with the default medium size.
+    resource_class: large
 
   presto-254:
     working_directory: /home/circleci/metabase/metabase/
@@ -138,7 +141,9 @@ executors:
       - image: metabase/ci:lein-2.9.5-clojure-1.10.3.814
       - image: metabase/presto-mb-ci:latest # version 0.254
         environment:
-          JAVA_TOOL_OPTIONS: "-Xmx512m"
+          JAVA_TOOL_OPTIONS: "-Xmx2g"
+    # (see above)
+    resource_class: large
 
   sparksql:
     working_directory: /home/circleci/metabase/metabase/
