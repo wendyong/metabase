@@ -1,6 +1,7 @@
 (ns metabase.test.data.presto-jdbc
   "Presto JDBC driver test extensions."
-  (:require [clojure.string :as str]
+  (:require [clojure.java.jdbc :as jdbc]
+            [clojure.string :as str]
             [metabase.config :as config]
             [metabase.connection-pool :as connection-pool]
             [metabase.driver :as driver]
@@ -11,7 +12,8 @@
             [metabase.test.data.sql-jdbc :as sql-jdbc.tx]
             [metabase.test.data.sql-jdbc.execute :as execute]
             [metabase.test.data.sql-jdbc.load-data :as load-data]
-            [metabase.test.data.sql.ddl :as ddl])
+            [metabase.test.data.sql.ddl :as ddl]
+            [metabase.test :as mt])
   (:import [java.sql Connection DriverManager PreparedStatement]))
 
 (sql-jdbc.tx/add-test-extensions! :presto-jdbc)
