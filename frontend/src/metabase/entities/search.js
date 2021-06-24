@@ -29,18 +29,22 @@ export default createEntity({
           namespace,
           ...unsupported
         } = query;
+
         if (Object.keys(unsupported).length > 0) {
           throw new Error(
             "search with `collection` filter does not support these filters: " +
               Object.keys(unsupported).join(", "),
           );
         }
-        return (await collectionList({
+
+        const list = await collectionList({
           collection,
           archived,
           model,
           namespace,
-        })).map(item => ({
+        });
+
+        return list.data.map(item => ({
           collection_id: canonicalCollectionId(collection),
           archived: archived || false,
           ...item,
