@@ -13,6 +13,8 @@
             [metabase.query-processor :as qp]
             [metabase.related :as related]
             [metabase.types :as types]
+            [metabase.sync :as sync]
+            [metabase.sync.concurrent :as sync.concurrent]
             [metabase.util :as u]
             [metabase.util.i18n :refer [trs]]
             [metabase.util.schema :as su]
@@ -134,8 +136,11 @@
             :present #{:caveats :description :fk_target_field_id :points_of_interest :semantic_type :visibility_type :coercion_strategy :effective_type
                        :has_field_values}
             :non-nil #{:display_name :settings})))))
-    ;; return updated field
-    (hydrate (Field id) :dimensions)))
+    ;; return updated field. note the fingerprint on this might be out of date if the task below would replace
+    ;; them. not sure what to do.
+    (u/prog1 (hydrate (Field id) :dimensions)
+      (when (not= effective-type (:effective_type field))
+        (sync.concurrent/submit-task (fn [] (sync/refingerprint-field! <>)))))))
 
 
 ;;; ------------------------------------------------- Field Metadata -------------------------------------------------
