@@ -225,7 +225,9 @@
   "Add a WHERE clause to only return tables with the given DB id.
   Used in data picker for joins because we can't join across DB's."
   [query :- su/Map, id :- (s/maybe s/Int)]
-  (if (some? id) (h/merge-where query [:= id :db_id]) query))
+  (if (some? id)
+    (h/merge-where query [:= id :db_id])
+    query))
 
 (s/defn ^:private add-card-db-id-clause
   "Add a WHERE clause to only return cards with the given DB id.
@@ -299,7 +301,7 @@
         (if (contains? current-user-perms "/")
           base-query
           (let [data-perms (filter #(re-find #"^/db/*" %) current-user-perms)]
-            (when (seq data-perms)
+            (if (seq data-perms)
               {:select (:select base-query)
                :from   [[(merge
                            base-query
@@ -315,7 +317,8 @@
                                       :path]]})
                          :table]]
                :where  (into [:or] (for [path data-perms]
-                                     [:like :path (str path "%")]))})))
+                                     [:like :path (str path "%")]))}
+              base-query)))
         table-db-id))))
 
 (defn order-clause
