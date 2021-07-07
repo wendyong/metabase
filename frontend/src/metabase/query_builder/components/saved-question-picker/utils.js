@@ -17,7 +17,6 @@ export function buildCollectionTree(collections) {
   return collections.map(collection => ({
     id: collection.id,
     name: collection.name,
-    schemaName: collection.originalName || collection.name,
     icon: getCollectionIcon(collection),
     children: buildCollectionTree(collection.children),
   }));
