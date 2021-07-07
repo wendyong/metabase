@@ -19,6 +19,7 @@ const sourceFolderLocation = userArgs[userArgs.indexOf("--folder") + 1];
 const specs = userArgs[userArgs.indexOf("--spec") + 1];
 const isSingleSpec = !specs || !specs.match(/,/);
 const testFiles = isSingleSpec ? specs : specs.split(",");
+const envArgs = userArgs[userArgs.indexOf("--env") + 1];
 
 function readFile(fileName) {
   return new Promise(function(resolve, reject) {
@@ -90,10 +91,16 @@ const init = async () => {
   // See: https://docs.cypress.io/guides/references/configuration#Command-Line
   const commandLineConfig = JSON.stringify(config);
 
+  const envArray = ["--env", envArgs];
+
   // These env vars provide the token to the backend.
   // If they're not present, we skip some tests that depend on a valid token.
   const hasEnterpriseToken =
     process.env["ENTERPRISE_TOKEN"] && process.env["MB_EDITION"] === "ee";
+
+  if (hasEnterpriseToken) {
+    envArray.push("HAS_ENTERPRISE_TOKEN=true");
+  }
 
   const cypressProcess = spawn(
     "yarn",
@@ -112,7 +119,7 @@ const init = async () => {
             "mochaFile=cypress/results/results-[hash].xml",
           ]
         : []),
-      ...(hasEnterpriseToken ? ["--env", "HAS_ENTERPRISE_TOKEN=true"] : []),
+      ...envArray,
     ],
     { stdio: "inherit" },
   );
