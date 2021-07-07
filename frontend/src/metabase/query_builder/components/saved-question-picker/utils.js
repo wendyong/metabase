@@ -22,22 +22,22 @@ export function buildCollectionTree(collections) {
   }));
 }
 
-export const findCollectionByName = (collections, name) => {
+export const findCollection = (collections, id) => {
   if (!collections || collections.length === 0) {
     return null;
   }
 
-  const collection = collections.find(c => c.schemaName === name);
+  const collection = collections.find(c => c.id === id);
 
   if (collection) {
     return collection;
   }
 
-  return findCollectionByName(
+  return findCollection(
     collections
       .map(c => c.children)
       .filter(Boolean)
       .flat(),
-    name,
+    id,
   );
 };

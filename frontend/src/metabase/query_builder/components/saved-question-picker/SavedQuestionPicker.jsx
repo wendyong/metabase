@@ -23,7 +23,7 @@ import {
   CollectionsContainer,
   BackButton,
 } from "./SavedQuestionPicker.styled";
-import { buildCollectionTree, findCollectionByName } from "./utils";
+import { buildCollectionTree, findCollection } from "./utils";
 
 const propTypes = {
   onSelect: PropTypes.func.isRequired,
@@ -31,8 +31,13 @@ const propTypes = {
   collections: PropTypes.array.isRequired,
   currentUser: PropTypes.object.isRequired,
   databaseId: PropTypes.string,
-  tableId: PropTypes.string,
-  collectionName: PropTypes.string,
+  selectedTable: PropTypes.shape({
+    id: PropTypes.oneOfType(PropTypes.number.isRequired),
+    collection_id: PropTypes.oneOfType([
+      PropTypes.number.isRequired,
+      PropTypes.string.isRequired,
+    ]),
+  }),
 };
 
 const OUR_ANALYTICS_COLLECTION = {
@@ -50,8 +55,7 @@ function SavedQuestionPicker({
   collections,
   currentUser,
   databaseId,
-  tableId,
-  collectionName,
+  selectedTable,
 }) {
   const collectionTree = useMemo(() => {
     const preparedCollections = [];
@@ -88,7 +92,11 @@ function SavedQuestionPicker({
   }, [collections, currentUser]);
 
   const initialCollection = useMemo(
-    () => findCollectionByName(collectionTree, collectionName),
+    () =>
+      findCollection(
+        collectionTree,
+        selectedTable && selectedTable.collection_id,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -121,7 +129,7 @@ function SavedQuestionPicker({
       </CollectionsContainer>
       <SavedQuestionList
         collection={selectedCollection}
-        selectedId={tableId}
+        selectedId={selectedTable && selectedTable.id}
         databaseId={databaseId}
         onSelect={onSelect}
       />
